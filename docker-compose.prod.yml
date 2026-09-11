@@ -1,0 +1,35 @@
+services:
+  sync-app:
+    image: heyrcg/tulola-sync-app:latest
+    container_name: tulola-sync-app
+    restart: unless-stopped
+    environment:
+      - SHOPIFY_API_KEY=${SHOPIFY_API_KEY}
+      - SHOPIFY_API_SECRET=${SHOPIFY_API_SECRET}
+      - SHOPIFY_APP_URL=https://tulola-sync-app.heyrcg.com
+      - SCOPES=read_customers,write_customers,read_orders
+      - NODE_ENV=production
+      - DATABASE_URL=file:./data/prod.sqlite
+      - TULOLA_INTEGRATION_URL=${TULOLA_INTEGRATION_URL}
+      - TULOLA_INTEGRATION_ACCESS_TOKEN=${TULOLA_INTEGRATION_ACCESS_TOKEN}
+      - BRIDGE_SERVICE_TOKEN=${BRIDGE_SERVICE_TOKEN}
+    volumes:
+      - ./data:/app/data
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tulola-sync-app.rule=Host(`tulola-sync-app.heyrcg.com`)"
+      - "traefik.http.routers.tulola-sync-app.entrypoints=websecure"
+      - "traefik.http.routers.tulola-sync-app.tls.certresolver=letsencrypt"
+      - "traefik.http.services.tulola-sync-app.loadbalancer.server.port=80"
+    networks:
+      - traefik
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/healthz"]
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+      interval: 30s
+
+networks:
+  traefik:
+    external: true
