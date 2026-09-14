@@ -56,21 +56,46 @@ async function searchCustomer(
   return data.data?.customers?.edges?.[0]?.node?.id ?? null;
 }
 
+// Resolves the best available first/last name from the customer record.
+// Priority: explicit fields first, then fullName as fallback.
+// lastName is optional — Shopify allows a customer with only a first name.
+function resolveName(customer: CustomerInput): { firstName: string; lastName?: string } | null {
+  const fn = customer.firstName?.trim();
+  const ln = customer.lastName?.trim();
+  const full = customer.fullName?.trim();
+
+  if (fn && ln) return { firstName: fn, lastName: ln };
+
+  if (fn) {
+    // lastName missing — try to extract it from the tail of fullName
+    if (full && full.toLowerCase().startsWith(fn.toLowerCase())) {
+      const tail = full.slice(fn.length).trim();
+      if (tail) return { firstName: fn, lastName: tail };
+    }
+    // No useful fullName — create with firstName only
+    return { firstName: fn };
+  }
+
+  if (full) {
+    const spaceIdx = full.indexOf(" ");
+    if (spaceIdx > 0) {
+      return { firstName: full.slice(0, spaceIdx), lastName: full.slice(spaceIdx + 1).trim() };
+    }
+    return { firstName: full };
+  }
+
+  return null;
+}
+
 async function processOne(
   admin: AdminApiContext,
   customer: CustomerInput,
 ): Promise<ProcessResult> {
-  const { custid, email, phone, firstName, lastName } = customer;
+  const { custid, email, phone } = customer;
 
-  // Validate: must have at least one contact field and a name
-  const hasContact = !!(email?.trim() || phone?.trim());
-  const hasName = !!(firstName?.trim() && lastName?.trim());
-
-  if (!hasContact) {
-    return { custid, status: "skipped", skipReason: "no email or phone" };
-  }
-  if (!hasName) {
-    return { custid, status: "skipped", skipReason: "missing first or last name" };
+  const name = resolveName(customer);
+  if (!name) {
+    return { custid, status: "skipped", skipReason: "no name information available" };
   }
 
   try {
@@ -90,12 +115,13 @@ async function processOne(
     const res = await admin.graphql(CUSTOMER_CREATE, {
       variables: {
         input: {
-          firstName: firstName!.trim(),
-          lastName: lastName!.trim(),
+          firstName: name.firstName,
+          ...(name.lastName ? { lastName: name.lastName } : {}),
           ...(email?.trim() ? { email: email.trim() } : {}),
           ...(phone?.trim() ? { phone: phone.trim() } : {}),
-          emailMarketingConsent: { marketingState: "NOT_SUBSCRIBED" },
-          smsMarketingConsent: { marketingState: "NOT_SUBSCRIBED" },
+          // consent fields require the corresponding contact field to be present
+          ...(email?.trim() ? { emailMarketingConsent: { marketingState: "NOT_SUBSCRIBED" } } : {}),
+          ...(phone?.trim() ? { smsMarketingConsent: { marketingState: "NOT_SUBSCRIBED" } } : {}),
         },
       },
     });
