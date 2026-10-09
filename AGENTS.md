@@ -8,7 +8,7 @@ Use the [Shopify AI Toolkit](https://shopify.dev/docs/apps/build/ai-toolkit) for
 
 This app is a bridge between Tulola's Shopify online store and a separate backend service, **`tulola-integration`** (sibling repo: `~/Desktop/repos/tulola-integration`). That service syncs Tulola's PRISM POS data (in-store + event sales) into Postgres and computes customer segmentation from it. Read its `CLAUDE.md`/`schema.prisma`/`src/service/segmentation/` before implementing anything here — this app's whole job is interfacing with that system, so guessing at its shape instead of reading it will produce a mismatched integration.
 
-Nothing beyond this scaffold is implemented yet — no OAuth has been tested end-to-end, no Shopify Partner app is registered (`shopify.app.toml` has a blank `client_id`), and every route under `api.*`/`webhooks.orders.*` is a stub returning `501` or doing a naive passthrough. Treat this as day 0.
+**This section is the original day-0 plan and is out of date.** Requirements 1 and 2 are implemented, requirement 3 is implemented inside tulola-integration itself (Shopify order webhooks go straight there, not through this app), and a fourth — PRISM transactions pushed into Shopify as orders — was added. `README.md` describes what actually exists; check it, and tulola-integration's code (`src/routes/webhooks.ts`, `src/service/shopify*Service.ts`), before trusting anything below.
 
 ### The three requirements
 

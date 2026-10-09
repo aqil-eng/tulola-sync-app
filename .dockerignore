@@ -1,3 +1,19 @@
 .cache
 build
 node_modules
+
+# Secrets and local data — never bake into the image (env comes from compose)
+.env
+.env.*
+!.env.example
+*.sqlite
+*.sqlite-journal
+data
+
+# Tooling / VCS
+.git
+.shopify
+.claude
+.kilo
+.mcp.json
+.DS_Store
