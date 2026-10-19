@@ -5,7 +5,7 @@ set -e
 # tulola-integration repo (docker-compose.yml), which runs the whole stack.
 #
 # Usage: ./deploy.sh <version>   e.g. ./deploy.sh 1.0.0
-IMAGE_NAME="heyrcg/tulola-sync-app"
+IMAGE_NAME="ghcr.io/heyrcg-dev/tulola-sync-app"
 TAG="${1:?Usage: ./deploy.sh <version>}"
 
 echo "Building and pushing $IMAGE_NAME:$TAG (linux/amd64)..."
