@@ -8,10 +8,16 @@ export interface SegmentSnapshot {
   // customer below; custid is carried through purely for audit/correlation.
   custid: string | null;
   shopifyCustomerId: string;
-  frequencySegment: string;
-  valueSegment: string;
-  lifecycleSegment: string;
+  // Every segment null means the customer has no counted purchase any more
+  // (e.g. their only order was cancelled): all segment:* tags are removed.
+  frequencySegment: string | null;
+  // Null when the customer has no spend in the last 12 months: no value tag.
+  valueSegment: string | null;
+  lifecycleSegment: string | null;
   channelSegment?: string | null;
+  // "high_retention" (2+ Shopify orders within 30 days in the last 12
+  // months) or null: then the tag is removed.
+  retentionSegment?: string | null;
 }
 
 interface ProcessResult {
@@ -27,6 +33,7 @@ const SEGMENT_PREFIXES = [
   "segment:value:",
   "segment:lifecycle:",
   "segment:channel:",
+  "segment:retention:",
 ];
 
 const GET_CUSTOMER_TAGS = `#graphql
@@ -57,11 +64,20 @@ function buildNewTags(currentTags: string[], snapshot: SegmentSnapshot): string[
   const filtered = currentTags.filter(
     (tag) => !SEGMENT_PREFIXES.some((prefix) => tag.startsWith(prefix)),
   );
-  filtered.push(`segment:frequency:${snapshot.frequencySegment}`);
-  filtered.push(`segment:value:${snapshot.valueSegment}`);
-  filtered.push(`segment:lifecycle:${snapshot.lifecycleSegment}`);
+  if (snapshot.frequencySegment) {
+    filtered.push(`segment:frequency:${snapshot.frequencySegment}`);
+  }
+  if (snapshot.valueSegment) {
+    filtered.push(`segment:value:${snapshot.valueSegment}`);
+  }
+  if (snapshot.lifecycleSegment) {
+    filtered.push(`segment:lifecycle:${snapshot.lifecycleSegment}`);
+  }
   if (snapshot.channelSegment) {
     filtered.push(`segment:channel:${snapshot.channelSegment}`);
+  }
+  if (snapshot.retentionSegment) {
+    filtered.push(`segment:retention:${snapshot.retentionSegment}`);
   }
   return filtered;
 }

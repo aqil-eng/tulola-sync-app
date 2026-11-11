@@ -23,9 +23,10 @@ Both directions use `x-access-token` header auth: `requireServiceToken.server.ts
 - **`Customer`** (`Customer.sid` BigInt id, `Customer.custid` = PRISM's customer id, unique): `email`, `phone`, `fullName` — the only plausible match keys against a Shopify customer today. No `shopifyCustomerId` column exists yet; requirement 1 will need to add one (or an equivalent lookup table) so requirement 2 doesn't re-resolve the match by email every run.
 - **`CustomerSegmentSnapshot`** (append-only — new row every segmentation run, never overwritten, specifically so segment migration can be charted over time): four segment fields to mirror as tags —
   - `frequencySegment`: `high` | `medium` | `low` | `churn_risk`
-  - `valueSegment`: `elite` | `premium` | `core` | `entry`
+  - `valueSegment`: `elite` | `premium` | `core` | `entry` (nullable — no positive spend in the last 12 months)
   - `lifecycleSegment`: `first_time_buyer` | `early_repeat` | `active_existing` | `lapsing_existing` | `inactive_churned`
   - `channelSegment`: `store_only_loyalist` | `store_main_shopper` | `hybrid_shopper` | `event_heavy_shopper` | `event_only_shopper` (nullable — older snapshots predate this dimension)
+  - `retentionSegment`: `high_retention` (nullable — set only with 2+ Shopify orders within 30 days in the last 12 months; tag `segment:retention:high_retention`, removed when null)
 - **`CustomerLifetimeStats`**: tracks `storePurchaseCount` and `eventPurchaseCount` as *explicit, separately-stored* counters (deliberately not derived from each other) — specifically so adding an `onlinePurchaseCount` here later, once this app is real, is additive rather than a rewrite. `channelSegment` is computed from these via `classifyChannel()` in `tulola-integration/src/service/segmentation/classify.ts`.
 - **`Transaction`/`TransactionItem`**: modeled after PRISM's document/line-item shape (`Transaction.btId` matches `Customer.custid`; `TransactionItem.itemDescription1` matches a separate `Product.itemCode` master-data table via a Postgres view, not a Prisma relation). Channel (`store` vs `event`) is currently inferred from `Transaction.storeName` matching `/event/i`. Whether Shopify orders reuse these same tables (with a synthetic `storeName` like `"Online"`, extending the channel classifier to a third branch) or get their own tables is an open question below.
 

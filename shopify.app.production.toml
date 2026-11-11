@@ -1,0 +1,40 @@
+# Production config — the Tulola Sync app installed on the live store.
+# Deploy with: shopify app deploy --config production
+# (Day-to-day `shopify app dev` keeps using shopify.app.toml, the dev-store app.)
+
+client_id = "b5235bbdee2f301e2f04dc4a56a50119"
+application_url = "https://tulola-sync-app.217-216-32-5.sslip.io"
+embedded = true
+name = "Tulola Sync Prod"
+
+[access_scopes]
+scopes = "read_customers,write_customers,read_orders,write_orders,read_products"
+
+[auth]
+redirect_urls = [ "https://tulola-sync-app.217-216-32-5.sslip.io/api/auth" ]
+
+[webhooks]
+api_version = "2026-10"
+
+  # Handled by this app (relative to application_url)
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks/app/uninstalled"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/scopes_update" ]
+  uri = "/webhooks/app/scopes_update"
+
+  # Delivered straight to tulola-integration, not this app. Signed with this
+  # app's client secret, so tulola-integration's SHOPIFY_WEBHOOK_SECRET must
+  # equal it.
+  [[webhooks.subscriptions]]
+  topics = [ "orders/paid" ]
+  uri = "https://tulola-integration.217-216-32-5.sslip.io/webhooks/shopify/orders/paid"
+
+  [[webhooks.subscriptions]]
+  topics = [ "orders/cancelled" ]
+  uri = "https://tulola-integration.217-216-32-5.sslip.io/webhooks/shopify/orders/cancelled"
+
+[build]
+automatically_update_urls_on_dev = false

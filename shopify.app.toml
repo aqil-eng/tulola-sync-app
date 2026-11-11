@@ -1,19 +1,37 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-client_id = "d14734c596ca18524c0069ef09fa11de"
+client_id = "b5235bbdee2f301e2f04dc4a56a50119"
+name = "Tulola Sync Prod"
 application_url = "https://tulola-sync-app.217-216-32-5.sslip.io"
 embedded = true
-name = "Tulola Sync"
+
+[build]
+automatically_update_urls_on_dev = true
 
 [webhooks]
 api_version = "2026-10"
 
+  [[webhooks.subscriptions]]
+  uri = "https://tulola-integration.217-216-32-5.sslip.io/webhooks/shopify/orders/cancelled"
+  topics = [ "orders/cancelled" ]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/app/scopes_update"
+  topics = [ "app/scopes_update" ]
+
+  [[webhooks.subscriptions]]
+  uri = "https://tulola-integration.217-216-32-5.sslip.io/webhooks/shopify/orders/paid"
+  topics = [ "orders/paid" ]
+
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/app/uninstalled"
+  topics = [ "app/uninstalled" ]
+
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
-scopes = "read_customers,write_customers,read_orders,write_orders,read_products"
+scopes = "read_customers,read_orders,read_products,write_customers,write_orders"
+optional_scopes = [ ]
+use_legacy_install_flow = false
 
 [auth]
 redirect_urls = [ "https://tulola-sync-app.217-216-32-5.sslip.io/api/auth" ]
-
-[build]
-automatically_update_urls_on_dev = true
