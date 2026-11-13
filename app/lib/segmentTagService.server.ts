@@ -18,6 +18,10 @@ export interface SegmentSnapshot {
   // "high_retention" (2+ Shopify orders within 30 days in the last 12
   // months) or null: then the tag is removed.
   retentionSegment?: string | null;
+  // Gold/Platinum membership tier ("gold" | "platinum") or null: then the
+  // tag is removed. Shopify tier discounts are limited to customers with
+  // the tag.
+  membershipTier?: string | null;
 }
 
 interface ProcessResult {
@@ -34,6 +38,7 @@ const SEGMENT_PREFIXES = [
   "segment:lifecycle:",
   "segment:channel:",
   "segment:retention:",
+  "segment:tier:",
 ];
 
 const GET_CUSTOMER_TAGS = `#graphql
@@ -78,6 +83,9 @@ function buildNewTags(currentTags: string[], snapshot: SegmentSnapshot): string[
   }
   if (snapshot.retentionSegment) {
     filtered.push(`segment:retention:${snapshot.retentionSegment}`);
+  }
+  if (snapshot.membershipTier) {
+    filtered.push(`segment:tier:${snapshot.membershipTier}`);
   }
   return filtered;
 }
